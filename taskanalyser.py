@@ -146,7 +146,7 @@ if __name__ == "__main__":
         team_match = re.match(r"^([\w\s]+)\s+<(\w+)>$",record)
 
 
-        if team_match and not member_match:
+        if team_match:
             team_name, team_code = team_match.groups()
             current_team = Team(team_code, team_name)
             teams.append(current_team)
@@ -154,12 +154,15 @@ if __name__ == "__main__":
         if member_match:
             fullName, username = member_match.groups()
             member = Member(fullName.strip(), username)
-            print(member)
+            if current_team:
+                current_team.add_member(member)
 
         if manager_match:
             fullName, username = manager_match.groups()
             manager = Manager(fullName, username)
-            print(manager)
+            if current_team:
+                current_team.add_member(manager)
+
 
 
     file.close()
