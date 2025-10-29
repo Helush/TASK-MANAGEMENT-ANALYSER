@@ -1,0 +1,14 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.env
+venv/
+.DS_Store
+
+# PyCharm
+.idea/
+
+# Logs / temp
+*.log
+*.tmp
