@@ -73,16 +73,55 @@ class Task:
     def __str__(self):
         return "code: {}, name: {}, tags: {}, properties: {}".format(self.code, self.name, self.tags, self.properties)
 
-class Manager:
-    def __init__(self, expertise):
-        self.expertise = expertise
-
 
 class Member:
     def __init__(self, name, username):
         self.name = name
         self.username = username
-        self.tasks = []
+        self.task = []
+
+    def addTask(self, task):
+        self.task.append(task)
+
+    def getTasksByProperty(self, name, value):
+        matchedTasks = []
+        for task in self.task:
+            if task.property[name] == value:
+                matchedTasks.append(task)
+        return matchedTasks
+
+    def getUrgentTasks(self):
+        urgentTasks = []
+        for task in self.task:
+            if task.property["Urgent"]:
+                urgentTasks.append(task)
+        return urgentTasks
+
+    def getWorkload(self):
+        totalHours = 0;
+        for task in self.task:
+            totalHours += task.getEstimatedHours()
+        return totalHours
+
+    def __str__(self):
+        print("Name: " + self.name + "Username: " + self.username)
+
+
+
+class Manager(Member):
+    def __init__(self, name, username):
+        """member constructor takes the name and username"""
+        Member.__init__(self, name, username)
+        self.expertise = []
+
+    def addTask(self, task):
+        self.task.append(task)
+        for tag in task.tag:
+            if tag not in self.expertise:
+                self.expertise.append(tag)
+
+    def __str__(self):
+        print("Manager Name: " + self.name + "Manager Username: " + self.username)
 
 if __name__ == "__main__":
     task1 = Task("B1", "API Development")
