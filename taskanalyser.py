@@ -1,3 +1,5 @@
+import re
+
 class Team:
     def __init__(self, code, name):
         self.code =code
@@ -124,12 +126,42 @@ class Manager(Member):
         print("Manager Name: " + self.name + "Manager Username: " + self.username)
 
 if __name__ == "__main__":
-    task1 = Task("B1", "API Development")
-    task1.addTag("backend")
-    task1.addTag("urgent")
-    task1.addProperty("estimatedhours","20")
-    task1.addProperty("priority","medium")
+    try:
+        file = open("data.txt","r")
+    except IOError:
+        print("File could not be opened")
+        exit(1)
+
+    records = file.readlines()
+    teams = []
+    current_team = None
+
+    for record in records:
+        record = record.strip()
+        if not record:
+            continue  # skip empty lines
+
+        member_match = re.match(r"^([\w\s]+)\s+<(\w+)>$",record)
+        manager_match = re.match(r"^([\w\s]+)\s+<!(\w+)>$",record)
+        team_match = re.match(r"^([\w\s]+)\s+<(\w+)>$",record)
 
 
-    print((task1.hasProperty("priority","medium")))
-    print(task1)
+        if team_match and not member_match:
+            team_name, team_code = team_match.groups()
+            current_team = Team(team_code, team_name)
+            teams.append(current_team)
+
+        if member_match:
+            fullName, username = member_match.groups()
+            member = Member(fullName.strip(), username)
+            print(member)
+
+        if manager_match:
+            fullName, username = manager_match.groups()
+            manager = Manager(fullName, username)
+            print(manager)
+
+
+    file.close()
+
+
