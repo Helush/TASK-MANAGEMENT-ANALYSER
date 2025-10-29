@@ -1,7 +1,3 @@
-import re
-
-import matplotlib.pyplot as plt
-import sys
 
 import sys
 import re
@@ -129,15 +125,19 @@ class Manager(Member):
     def __str__(self):
         print("Manager Name: " + self.name + "Manager Username: " + self.username)
 
+
 if __name__ == "__main__":
     try:
-        file = open("data.txt","r")
+        file = open("data.txt", "r")
     except IOError:
         print("File could not be opened")
         exit(1)
 
     records = file.readlines()
+
     teams = []
+    members = []
+    managers = []
     current_team = None
 
     for record in records:
@@ -145,32 +145,40 @@ if __name__ == "__main__":
         if not record:
             continue  # skip empty lines
 
-        member_match = re.match(r"^([\w\s]+)\s+<(\w+)>$",record)
-        manager_match = re.match(r"^([\w\s]+)\s+<!(\w+)>$",record)
-        team_match = re.match(r"^([\w\s]+)\s+<(\w+)>$",record)
-
+        member_match = re.match(r"^([\w\s]+)\s+<(\w+)>$", record)
+        manager_match = re.match(r"^([\w\s]+)\s+<!(\w+)>$", record)
+        team_match = re.match(r"^([\w\s]+)\s+<(\w+)>\s*->\s*([\w,]+)$", record)
 
         if team_match:
-            team_name, team_code = team_match.groups()
+            team_name, team_code, usernames_str = team_match.groups()
             current_team = Team(team_code, team_name)
+
+            for uname in usernames_str.split(","):
+                uname = uname.strip()
+                for m in members + managers:
+                    if m.username == uname:
+                        current_team.add_member(m)
             teams.append(current_team)
 
-        if member_match:
+        elif member_match:
             fullName, username = member_match.groups()
             member = Member(fullName.strip(), username)
+            members.append(member)
             if current_team:
                 current_team.add_member(member)
 
-        if manager_match:
+        elif manager_match:
             fullName, username = manager_match.groups()
             manager = Manager(fullName, username)
+            managers.append(manager)
             if current_team:
                 current_team.add_member(manager)
 
-
-
     file.close()
 
+    for team in teams:
+        for member in team.members:
+            print(team.name, member.username)
 
     while True: #menu loop
         print("Menu Options:\n1. Print Manager by Expertise\n2. Print Urgent Tasks\n3. Print Team Workloads\n4. Print Busiest Members\n5. Print Tasks by Property\n0. Exit\n")
@@ -191,65 +199,4 @@ if __name__ == "__main__":
                 break
             case _:
                 print("Invalid Option")
-
-
-    try:
-        file = open("data.txt","r")
-    except IOError:
-        print("File could not be opened")
-        exit(1)
-
-    records = file.readlines()
-    teams = []
-    current_team = None
-
-    for record in records:
-        record = record.strip()
-        if not record:
-            continue  # skip empty lines
-
-        member_match = re.match(r"^([\w\s]+)\s+<(\w+)>$",record)
-        manager_match = re.match(r"^([\w\s]+)\s+<!(\w+)>$",record)
-        team_match = re.match(r"^([\w\s]+)\s+<(\w+)>$",record)
-
-        if team_match:
-            team_name, team_code = team_match.groups()
-            current_team = Team(team_code, team_name)
-            teams.append(current_team)
-
-        if member_match:
-            fullName, username = member_match.groups()
-            member = Member(fullName.strip(), username)
-            if current_team:
-                current_team.add_member(member)
-
-        if manager_match:
-            fullName, username = manager_match.groups()
-            manager = Manager(fullName, username)
-            if current_team:
-                current_team.add_member(manager)
-
-    file.close()
-
-    while True: #menu loop
-        print("Menu Options:\n1. Print Manager by Expertise\n2. Print Urgent Tasks\n3. Print Team Workloads\n4. Print Busiest Members\n5. Print Tasks by Property\n0. Exit\n")
-        option = input("Enter your choice: ")
-        match option:
-            case "1":
-                print("Print Manager by Expertise")
-            case "2":
-                print("Print Urgent Tasks")
-            case "3":
-                print("Print Team Workloads")
-            case "4":
-                print("Print Busiest Members")
-            case "5":
-                print("Print Tasks by Property")
-            case "0":
-                print("Exiting...")
-                break
-            case _:
-                print("Invalid Option")
-
-
 
