@@ -196,14 +196,12 @@ if __name__ == "__main__":
 
 
     file.close()
-
     for team in teams:
         print(f"Team: {team.name}")
         for member in team.members:
             print(f"  Member: {member.username}")
             for task in member.task:
                 print(f"    Task: {task}")
-
     while True: #menu loop
         print("Menu Options:\n1. Print Manager by Expertise\n2. Print Urgent Tasks\n3. Print Team Workloads\n4. Print Busiest Members\n5. Print Tasks by Property\n0. Exit\n")
         option = input("Enter your choice: ")
