@@ -106,7 +106,7 @@ class Member:
         return total_hours
 
     def __str__(self):
-        print("Name: " + self.name + "Username: " + self.username)
+        return "Name: {} Username: {}".format(self.name, self.username)
 
 
 
@@ -123,7 +123,7 @@ class Manager(Member):
                 self.expertise.append(tag)
 
     def __str__(self):
-        print("Manager Name: " + self.name + "Manager Username: " + self.username)
+        return "Manager Name: {} Manager Username: {}".format(self.name, self.username)
 
 
 if __name__ == "__main__":
@@ -138,6 +138,7 @@ if __name__ == "__main__":
     teams = []
     members = []
     managers = []
+    tasks = []
     current_team = None
 
     for record in records:
@@ -148,6 +149,8 @@ if __name__ == "__main__":
         member_match = re.match(r"^([\w\s]+)\s+<(\w+)>$", record)
         manager_match = re.match(r"^([\w\s]+)\s+<!(\w+)>$", record)
         team_match = re.match(r"^([\w\s]+)\s+<(\w+)>\s*->\s*([\w,]+)$", record)
+        # [B1]API Development @ jdoe  # estimatedhours:20 #priority:high #backend #urgent
+        task_match = re.match(r"^\[(\w+)]\s*([\w\s]+)\s+@\s*(\w+)\s*((?:#\S+\s*)*)$", record)
 
         if team_match:
             team_name, team_code, usernames_str = team_match.groups()
@@ -174,11 +177,32 @@ if __name__ == "__main__":
             if current_team:
                 current_team.add_member(manager)
 
+        elif task_match:
+            task_code, task_name, assigned_user, tags = task_match.groups()
+            task = Task(task_code.strip(), task_name.strip())
+
+            if tags:
+            # Extract all tags after '#', ignore empties, and strip whitespace
+                tags_list = [t.strip() for t in tags.split('#') if t.strip()]
+                for tag in tags_list:
+                    if ':' in tag:
+                        name, value = tag.split(':', 1)
+                        task.addProperty(name, value)
+                    else:
+                        task.addTag(tag)
+            for m in members + managers:
+                    if m.username == assigned_user:
+                        m.addTask(task)
+
+
     file.close()
 
     for team in teams:
+        print(f"Team: {team.name}")
         for member in team.members:
-            print(team.name, member.username)
+            print(f"  Member: {member.username}")
+            for task in member.task:
+                print(f"    Task: {task}")
 
     while True: #menu loop
         print("Menu Options:\n1. Print Manager by Expertise\n2. Print Urgent Tasks\n3. Print Team Workloads\n4. Print Busiest Members\n5. Print Tasks by Property\n0. Exit\n")
