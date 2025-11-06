@@ -227,7 +227,6 @@ def printTasksByProperty(teams, name, value): # Option 5 in menu
         else:
             print(f"No such tasks in team {team.name}", end="\n")
 
-
 def loadData(filename = sys.argv[1]):
     try: # Attempt to open the file, handling the error by throwing an exception
         file = open(filename, "r")
