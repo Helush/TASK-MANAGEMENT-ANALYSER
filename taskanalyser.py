@@ -137,13 +137,13 @@ class Manager(Member):
         return "{} <{}>".format(self.name, self.username)
 
 def printManagersByExpertise(teams): # option 1 in menu
-    expertise = input("Enter expertise to search for: ").strip().lower()
+    expertise = input("Enter expertise to search for: ").strip().lower() # Ask user to give the expertise to search
     found = False
-    for team in teams:
-        for member in team.members:
-            if isinstance(member, Manager) and expertise in member.expertise:
-                found = True
-                print(f"\nManager: {member}")
+    for team in teams: # Look for each team
+        for member in team.members: # Look for each member in team
+            if isinstance(member, Manager) and expertise in member.expertise: # If the member is manager and expertise matches
+                found = True # Found the matching Manager with expertise
+                print(f"\nManager: {member}") # Print manager information along with expertises and all tasks assigned to that manager
                 print(f"Expertise: {', '.join(member.expertise)}")
                 for t in member.task:
                     print("   -", t)
@@ -153,8 +153,8 @@ def printManagersByExpertise(teams): # option 1 in menu
 
 def printUrgentTasks(teams): # option 2 in menu
     for team in teams:
-        if team.getUrgentTasks():
-            print(team.name+":", end="\n")
+        if team.getUrgentTasks(): # Gets urgent task(s) of each team
+            print(team.name+":", end="\n") # Prints team's name along with urgent task(s)
             for t in team.getUrgentTasks():
                 print(" ", t, end="\n\n")
         else:
@@ -164,26 +164,26 @@ def printUrgentTasks(teams): # option 2 in menu
 def printTeamWorkloads(teams): #option 3 in menu
     team_names = []
     team_workloads = []
-    for team in teams:
+    for team in teams: # Get workloads for each team and store workloads and teams accordingly
         workload = team.getWorkload()
-        if workload != 0:
+        if workload != 0: # Only the teams with workloads > 0 will be displayed
             team_names.append(team.name)
             team_workloads.append(workload)
-    plt.pie(team_workloads, labels=team_names)
+    plt.pie(team_workloads, labels=team_names) # Creates the pie chart, gives it a title
     plt.title('Team Workloads')
     plt.show()
 
 
-def printBusiestMembers(teams):
-    for team in teams:
+def printBusiestMembers(teams): # Option 4 in menu
+    for team in teams: # gets busiest member in each team
         busy_member = team.getBusiestMember()
-        if busy_member:
+        if busy_member: # if team has found the busiest member. Print team name, member's information,
             print(team.name + ":", end="\n")
             print(busy_member)
-            if isinstance(busy_member, Manager):
+            if isinstance(busy_member, Manager): # if the member is manager, print expertise as well
                 print("Expertise: ", end="")
                 print(','.join(busy_member.expertise))
-            for task in busy_member.task:
+            for task in busy_member.task: # print each task of the busy member
                 print(task)
             print("\n")
 
@@ -192,10 +192,10 @@ def printBusiestMembers(teams):
 
 
 
-def printTasksByProperty(teams, name, value): # option 5 in menu
-    for team in teams:
+def printTasksByProperty(teams, name, value): # Option 5 in menu
+    for team in teams: # get tasks by their name and value
         tasks = team.getTasksByProperty(name, value)
-        if len(tasks) != 0:
+        if len(tasks) != 0: # if task found
             print(f"\n{team.name}:")
             for task in tasks:
                 print(" ", task)
@@ -204,48 +204,44 @@ def printTasksByProperty(teams, name, value): # option 5 in menu
             print(f"No such tasks in team {team.name}", end="\n")
 
 
-if __name__ == "__main__":
-    filename = sys.argv[1]
-    try:
+def loadData(filename = sys.argv[1]):
+    try: # Attempt to open the file, handling the error by throwing an exception
         file = open(filename, "r")
     except IOError:
         print("File could not be opened")
         exit(1)
 
-    print("\n\n")
-    for i in range (len(sys.argv)):
-       print("argument %s" %sys.argv[i])
-
-    records = file.readlines()
-
+    records = file.readlines() # Read all lines and store them for processing
+    # Creating object lists
     teams = []
     members = []
     managers = []
     tasks = []
-    current_team = None
+    current_team = None # Keeps track of the team currently being processed
 
-    for record in records:
+    for record in records: # Loop through every line to handle blank lines and new lines to get clean records
         record = record.strip()
         if not record:
             continue  # skip empty lines
 
-        member_match = re.match(r"^([\w\s]+)\s+<(\w+)>$", record)
-        manager_match = re.match(r"^([\w\s]+)\s+<!(\w+)>$", record)
-        team_match = re.match(r"^([\w\s]+)\s+<(\w+)>\s*->\s*([\w,]+)$", record)
-        # [B1]API Development @ jdoe  # estimatedhours:20 #priority:high #backend #urgent
-        task_match = re.match(r"^\[(\w+)]\s*([\w\s]+)\s+@\s*(\w+)\s*((?:#\S+\s*)*)$", record)
+        # Pattern matching for different record types
+        member_match = re.match(r"^([\w\s]+)\s+<(\w+)>$", record) # Matches members with the format fullname, <username>
+        manager_match = re.match(r"^([\w\s]+)\s+<!(\w+)>$", record) # Matches managers with the format fullname, <!username>
+        team_match = re.match(r"^([\w\s]+)\s+<(\w+)>\s*->\s*([\w,]+)$", record) # Matches teams with the format [Team Name] <[team_code]> -> username1, username2 ...
+        task_match = re.match(r"^\[(\w+)]\s*([\w\s]+)\s+@\s*(\w+)\s*((?:#\S+\s*)*)$", record) # Matches tasks with the format [[taskCode]] taskName @ username #propertyOrTag1 #propertyOrTag2 ...
 
-        if team_match:
+        if team_match: # If the current line is matching team, capture necessary information and create a new team object
             team_name, team_code, usernames_str = team_match.groups()
             current_team = Team(team_code, team_name)
-
+            # Add members/managers to this team if their usernames match
             for uname in usernames_str.split(","):
                 uname = uname.strip()
                 for m in members + managers:
                     if m.username == uname:
                         current_team.add_member(m)
-            teams.append(current_team)
+            teams.append(current_team) # store the team in teams list
 
+        # Create member
         elif member_match:
             fullName, username = member_match.groups()
             member = Member(fullName.strip(), username)
@@ -253,6 +249,7 @@ if __name__ == "__main__":
             if current_team:
                 current_team.add_member(member)
 
+        # Create manager
         elif manager_match:
             fullName, username = manager_match.groups()
             manager = Manager(fullName, username)
@@ -260,6 +257,7 @@ if __name__ == "__main__":
             if current_team:
                 current_team.add_member(manager)
 
+        # Create task and assign it
         elif task_match:
             task_code, task_name, assigned_user, tags = task_match.groups()
             task = Task(task_code.strip(), task_name.strip())
@@ -268,43 +266,41 @@ if __name__ == "__main__":
             # Extract all tags after '#', ignore empties, and strip whitespace
                 tags_list = [t.strip() for t in tags.split('#') if t.strip()]
                 for tag in tags_list:
-                    if ':' in tag:
+                    if ':' in tag: # Property (name:value)
                         name, value = tag.split(':', 1)
                         task.addProperty(name, value)
                     else:
                         task.addTag(tag)
-            for m in members + managers:
+            for m in members + managers: # assigns task to the correct person
                     if m.username == assigned_user:
                         m.addTask(task)
 
-    file.close()
-    for team in teams:
-        print(f"Team: {team.name}")
-        for member in team.members:
-            print(f"  Member: {member.username}")
-            for task in member.task:
-                print(f"    Task: {task}")
-
+    file.close() # Close the file
     print("Data loaded successfully.")
-    while True: #menu loop
+    return teams
+
+# Start of the program execution
+if __name__ == "__main__":
+    teams = loadData()
+    while True: # Menu loop
         print("\nMenu Options:\n1. Print Manager by Expertise\n2. Print Urgent Tasks\n3. Print Team Workloads\n4. Print Busiest Members\n5. Print Tasks by Property\n0. Exit\n")
         option = input("Enter your choice: ")
         match option:
-            case "1":
+            case "1": # Displays the full details of managers in the system which have specified expertise by user
                 printManagersByExpertise(teams)
-            case "2":
+            case "2": # Prints the details of all tasks which are tagged urgent for each team
                 printUrgentTasks(teams)
-            case "3":
+            case "3": # Displays a pie chart showing the workload in estimated hours for each team in system
                 printTeamWorkloads(teams)
-            case "4":
+            case "4": # Prints the team member with the highest workload in estimated hours for each team
                 printBusiestMembers(teams)
-            case "5":
-                property_name = input("Enter property name: ").lower()
-                property_value = input("Enter property value: ").lower()
+            case "5": # Prints the team name and all tasks assigned to that team which contain that specified property with the specified value given by user for each team
+                property_name = input("Enter property name: ").strip().lower()
+                property_value = input("Enter property value: ").strip().lower()
                 printTasksByProperty(teams, property_name, property_value)
-            case "0":
+            case "0": # Exit case
                 print("Exiting.")
                 break
-            case _:
+            case _: # Error handling for invalid menu option
                 print("Invalid Option. Try again.")
 
