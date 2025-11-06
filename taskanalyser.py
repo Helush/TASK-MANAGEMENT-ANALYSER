@@ -1,6 +1,7 @@
 
 import sys
 import re
+import matplotlib.pyplot as plt
 
 class Team:
     def __init__(self, code, name):
@@ -13,7 +14,7 @@ class Team:
 
     def isManagerExperiencedWith(self, expertise):
         for member in self.members:
-            if isinstance(member, Manager) and member.expertise == expertise: #do we need to check instance since manager is already a member?
+            if isinstance(member, Manager) and member.expertise == expertise:
                 return True
         return False
 
@@ -59,7 +60,7 @@ class Task:
         self.properties[name] = value
 
     def getEstimatedHours(self):
-        return self.properties["estimatedhours"]
+        return int(self.properties["estimatedhours"])
 
     def isUrgent(self):
         for tag in self.tags:
@@ -68,12 +69,23 @@ class Task:
         return False
 
     def hasProperty(self, name, value):
-        if self.properties[name]== value:
+        if name in self.properties:
+            if self.properties[name]== value:
                 return True
         return False
 
     def __str__(self):
-        return "code: {}, name: {}, tags: {}, properties: {}".format(self.code, self.name, self.tags, self.properties)
+        result = f"[{self.code}] {self.name}"
+
+        if self.tags:
+            result += "  " + " ".join(f"#{tag}" for tag in self.tags)
+
+        # Add properties (as name:value)
+        if self.properties:
+            result += "  " + " ".join(f"#{name}:{value}" for name, value in self.properties.items())
+
+
+        return result
 
 
 class Member:
@@ -88,14 +100,14 @@ class Member:
     def getTasksByProperty(self, name, value):
         matched_tasks = []
         for task in self.task:
-            if task.properties[name] == value:
+            if task.hasProperty(name, value):
                 matched_tasks.append(task)
         return matched_tasks
 
     def getUrgentTasks(self):
         urgent_tasks = []
         for task in self.task:
-            if task.properties["Urgent"]:
+            if task.isUrgent():
                 urgent_tasks.append(task)
         return urgent_tasks
 
@@ -106,8 +118,7 @@ class Member:
         return total_hours
 
     def __str__(self):
-        return "Name: {} Username: {}".format(self.name, self.username)
-
+        return "{} <{}>".format(self.name, self.username)
 
 
 class Manager(Member):
@@ -123,15 +134,87 @@ class Manager(Member):
                 self.expertise.append(tag)
 
     def __str__(self):
-        return "Manager Name: {} Manager Username: {}".format(self.name, self.username)
+        return "{} <{}>".format(self.name, self.username)
+
+def printManagersByExpertise(teams): # option 1 in menu
+    expertise = input("Enter expertise to search for: ").strip().lower()
+    found = False
+    for team in teams:
+        for member in team.members:
+            if isinstance(member, Manager) and expertise in member.expertise:
+                found = True
+                print(f"\nManager: {member}")
+                print(f"Expertise: {', '.join(member.expertise)}")
+                for t in member.task:
+                    print("   -", t)
+
+    if not found:
+        print("\nNo manager found with expertise:", expertise)
+
+def printUrgentTasks(teams): # option 2 in menu
+    for team in teams:
+        if team.getUrgentTasks():
+            print(team.name+":", end="\n")
+            for t in team.getUrgentTasks():
+                print(" ", t, end="\n\n")
+        else:
+            print("No urgent tasks for Team " + team.name, end="\n\n")
+
+
+def printTeamWorkloads(teams): #option 3 in menu
+    team_names = []
+    team_workloads = []
+    for team in teams:
+        workload = team.getWorkload()
+        if workload != 0:
+            team_names.append(team.name)
+            team_workloads.append(workload)
+    plt.pie(team_workloads, labels=team_names)
+    plt.title('Team Workloads')
+    plt.show()
+
+
+def printBusiestMembers(teams):
+    for team in teams:
+        busy_member = team.getBusiestMember()
+        if busy_member:
+            print(team.name + ":", end="\n")
+            print(busy_member)
+            if isinstance(busy_member, Manager):
+                print("Expertise: ", end="")
+                print(','.join(busy_member.expertise))
+            for task in busy_member.task:
+                print(task)
+            print("\n")
+
+        else:
+            print("No busy members in team " + team.name, end="\n\n")
+
+
+
+def printTasksByProperty(teams, name, value): # option 5 in menu
+    for team in teams:
+        tasks = team.getTasksByProperty(name, value)
+        if len(tasks) != 0:
+            print(f"\n{team.name}:")
+            for task in tasks:
+                print(" ", task)
+            print("\n")
+        else:
+            print(f"No such tasks in team {team.name}", end="\n")
 
 
 if __name__ == "__main__":
+    filename = sys.argv[1]
     try:
-        file = open("data.txt", "r")
+        file = open(filename, "r")
     except IOError:
         print("File could not be opened")
         exit(1)
+
+    print("\n\n")
+    for i in range (len(sys.argv)):
+       print("argument %s" %sys.argv[i])
 
     records = file.readlines()
 
@@ -194,7 +277,6 @@ if __name__ == "__main__":
                     if m.username == assigned_user:
                         m.addTask(task)
 
-
     file.close()
     for team in teams:
         print(f"Team: {team.name}")
@@ -202,23 +284,27 @@ if __name__ == "__main__":
             print(f"  Member: {member.username}")
             for task in member.task:
                 print(f"    Task: {task}")
+
+    print("Data loaded successfully.")
     while True: #menu loop
-        print("Menu Options:\n1. Print Manager by Expertise\n2. Print Urgent Tasks\n3. Print Team Workloads\n4. Print Busiest Members\n5. Print Tasks by Property\n0. Exit\n")
+        print("\nMenu Options:\n1. Print Manager by Expertise\n2. Print Urgent Tasks\n3. Print Team Workloads\n4. Print Busiest Members\n5. Print Tasks by Property\n0. Exit\n")
         option = input("Enter your choice: ")
         match option:
             case "1":
-                print("Print Manager by Expertise")
+                printManagersByExpertise(teams)
             case "2":
-                print("Print Urgent Tasks")
+                printUrgentTasks(teams)
             case "3":
-                print("Print Team Workloads")
+                printTeamWorkloads(teams)
             case "4":
-                print("Print Busiest Members")
+                printBusiestMembers(teams)
             case "5":
-                print("Print Tasks by Property")
+                property_name = input("Enter property name: ").lower()
+                property_value = input("Enter property value: ").lower()
+                printTasksByProperty(teams, property_name, property_value)
             case "0":
-                print("Exiting...")
+                print("Exiting.")
                 break
             case _:
-                print("Invalid Option")
+                print("Invalid Option. Try again.")
 
