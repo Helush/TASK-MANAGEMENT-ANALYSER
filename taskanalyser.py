@@ -1,46 +1,52 @@
 
-import sys
+import sys # Used for reading the input fom command line
 import re
 import matplotlib.pyplot as plt
 
 class Team:
     def __init__(self, code, name):
+        # Team constructor initializes each data member
         self.code = code
         self.name = name
         self.members: list[Member] = []
 
     def add_member(self, member):
+        # Adds a new member to the Team
         self.members.append(member)
 
     def isManagerExperiencedWith(self, expertise):
-        for member in self.members:
+        for member in self.members: # Checks if the member is a Manager and whether that manager has the expertise
             if isinstance(member, Manager) and member.expertise == expertise:
                 return True
         return False
 
     def getUrgentTasks(self):
+        # Method that returns all the urgent tasks in a Team
         urgent_tasks = []
-        for member in self.members:
+        for member in self.members: # Added all urgent tasks from all the members
             urgent_tasks.extend(member.getUrgentTasks())
         return urgent_tasks
 
     def getWorkload(self):
+        # Method that returns the total workload (hours) in a team
         total_workload = 0
-        for member in self.members:
+        for member in self.members: # Adding the total estimated hours of all tasks assigned to this each member
             total_workload += member.getWorkload()
         return total_workload
 
     def getBusiestMember(self):
+        # Method that returns the busiest team member of the team
         busiest_member = None
         max_hours = 0
         for member in self.members:
             workload = member.getWorkload()
-            if workload > max_hours:
+            if workload > max_hours: # Comparing the workload of each team member
                 max_hours = workload
-                busiest_member = member
+                busiest_member = member # Assigning member was the max_hours as the busiest member
         return busiest_member
 
     def getTasksByProperty(self, name, value):
+        # Returns a list of tasks assigned to this team, which contains the given name and value
         all_tasks = []
         for member in self.members:
             all_tasks += member.getTasksByProperty(name, value)
@@ -48,92 +54,110 @@ class Team:
 
 class Task:
     def __init__(self, code = "0", name = "Undefined"):
+        # Task constructor initializes code, name, tags and properties
         self.code = code
         self.name = name
         self.tags = []
         self.properties = {}
 
     def addTag(self, tag):
+        # Adds a new tag to the list
         self.tags.append(tag)
 
     def addProperty(self, name, value):
+        # Method to add a new property to the dictionary
         self.properties[name] = value
 
     def getEstimatedHours(self):
+        # Returns the estimated hours of a given task
         return int(self.properties["estimatedhours"])
 
     def isUrgent(self):
+        # Method that determines whether a tag is urgent or not
         for tag in self.tags:
             if tag == "urgent":
                 return True
         return False
 
     def hasProperty(self, name, value):
+        # Method that checks whether a task has a given property with the given name and value
         if name in self.properties:
             if self.properties[name]== value:
                 return True
         return False
 
     def __str__(self):
+        # Return the Task object formatted as in the example:
+        # [V1] Set up CICD pipeline  #devops  #estimatedhours:18  #complexity:high
         result = f"[{self.code}] {self.name}"
 
+        # Append tags in the form #tag
         if self.tags:
             result += "  " + " ".join(f"#{tag}" for tag in self.tags)
 
-        # Add properties (as name:value)
+        # Append properties in the form #name:value
         if self.properties:
             result += "  " + " ".join(f"#{name}:{value}" for name, value in self.properties.items())
-
 
         return result
 
 
+
 class Member:
     def __init__(self, name, username):
+        # Initializes the name, username, tasks of a Member
         self.name = name
         self.username = username
         self.task: list[Task] = []
 
     def addTask(self, task):
+        # Appends a new task
         self.task.append(task)
 
     def getTasksByProperty(self, name, value):
+        # Returns all the tasks that contains the given property name and value
         matched_tasks = []
         for task in self.task:
             if task.hasProperty(name, value):
-                matched_tasks.append(task)
+                matched_tasks.append(task) # Appends matching tasks with the given property name and value
         return matched_tasks
 
     def getUrgentTasks(self):
+        # Returns a list of tasks assigned to this member that are tagged as urgent
         urgent_tasks = []
         for task in self.task:
-            if task.isUrgent():
+            if task.isUrgent():  # isUrgent() checks whether the task has the "urgent" tag
                 urgent_tasks.append(task)
         return urgent_tasks
 
     def getWorkload(self):
+        # Returns the total estimated workload assigned to each member
         total_hours = 0
         for task in self.task:
-            total_hours += task.getEstimatedHours()
+            total_hours += task.getEstimatedHours() # getEstimatedHours() returns the estimated workload for each task
         return total_hours
 
     def __str__(self):
+        # Returns the string representation of Member
         return "{} <{}>".format(self.name, self.username)
 
 
 class Manager(Member):
     def __init__(self, name, username):
-        """member constructor takes the name and username"""
+        # Initializes each data member of Manager
+        # Member constructor takes the name and username
         Member.__init__(self, name, username)
         self.expertise = []
 
     def addTask(self, task):
+        # Appends a new task for manager
         self.task.append(task)
-        for tag in task.tags:
+        for tag in task.tags: # Updating their expertise with the tags of the task
             if tag not in self.expertise:
                 self.expertise.append(tag)
 
     def __str__(self):
+        # Returns the string representation of Manager
         return "{} <{}>".format(self.name, self.username)
 
 def printManagersByExpertise(teams): # option 1 in menu
